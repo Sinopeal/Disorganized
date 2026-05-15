@@ -49,7 +49,7 @@ def cookies_loop(
                     finally:
                         await asyncio.sleep(interval)
 
-            await asyncio.gather(*(worker(i)) for i in range(1, concurrency + 1))
+            await asyncio.gather(*[asyncio.create_task(worker(i)) for i in range(1, concurrency + 1)])
 
         return wrapper
 

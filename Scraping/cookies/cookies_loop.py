@@ -15,7 +15,7 @@ redis: Redis | RedisCluster
 def cookies_loop(
         list_key: str,
         interval: float = 1.0,
-        wait: bool = False,
+        threshold: int | None = None,
 ) -> Callable[
     [Callable[..., Awaitable[Optional[dict]]]],
     Callable[..., Coroutine[Any, Any, None]],
@@ -27,9 +27,9 @@ def cookies_loop(
         async def wrapper(*args: Any, **kwargs: Any) -> None:
             while True:
                 try:
-                    if wait:
+                    if threshold:
                         count = await redis.llen(list_key)
-                        if count >= 5:
+                        if count >= threshold:
                             await asyncio.sleep(interval)
                             continue
                     data = await fetch_cookies(*args, **kwargs)
@@ -44,7 +44,8 @@ def cookies_loop(
                         await redis.lpush(list_key, json.dumps(payload, ensure_ascii=False))
                 except Exception as e:
                     logger.error(e)
-                await asyncio.sleep(interval)
+                finally:
+                    await asyncio.sleep(interval)
 
         return wrapper
 
